@@ -1,0 +1,16 @@
+Trivial File Transfer Protocol, and you
+
+There is nothing trivial about TFTP let me assure you. It is actually a pretty neat protocol with some distinctive features. This protocol also happens to be a favorite of malicious hackers for the purpose of sending over, or retrieving files. TFTP is also quite quick, but more on the speed of TFTP a little later on. Much like other application layer protocols this one is ferried about by IP, and in turn uses UDP for its transport protocol.
+
+
+Now TFTP itself has five different message types that it can use. They are as follows;
+
+
+
+RRQ, which breaks out as Read Request
+WRQ, which breaks out as Write Request
+ACK, which breaks out as Acknowledgement
+ERROR, which breaks out as Error message
+DATA, which breaks out as, to read or write the next chunk of data
+
+Now if you happen to capture any TFTP packets on the wire you will see these message types in the packet itself as noted in the packet further down below. (I have underlined it) TFTP also has a series of error codes, which can be found here. If you recall from our discussion of HTTP and SMTP these protocols also had status and error codes. These codes are required to build a coherent exchange of data, which will at times experience error conditions. Courtesy of these codes, whether they be status or error, are various conditions communicated between the client and server in question.
