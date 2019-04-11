@@ -1,8 +1,21 @@
+/*
+ *
+ * TFTP PROTOCOL IMPLIMENTATION 
+ *
+ * Programer Name :  SACHIN POOJARI
+ * REFERENCE USED : RFC1350  TFTP Document 
+ *
+ * 
+ */
+
+
+
 #define DATA_MAX 12
 #define mode_size 10
 #define fname_size 256
 #define ERROR_MAX 20
-
+#define WAIT_COUNT 5
+#define MS 1000*200 //delay in ms to watch output for debug
 struct RW
 {
         short int opcode;  //2byte 
@@ -50,6 +63,18 @@ void RRQ_frame_make(union FRAME *frame,char* fname,char* mode)
 
         bzero(frame,sizeof(*frame));
         frame->RRQ.opcode=01;
+        strcpy(frame->RRQ.fname,fname);
+        strcpy(frame->RRQ.mode,mode);
+        printf("%d,%s,%s\n",frame->RRQ.opcode,frame->RRQ.fname,frame->RRQ.mode);
+
+}
+
+void WRQ_frame_make(union FRAME *frame,char* fname,char* mode)
+{
+
+
+        bzero(frame,sizeof(*frame));
+        frame->RRQ.opcode=02;
         strcpy(frame->RRQ.fname,fname);
         strcpy(frame->RRQ.mode,mode);
         printf("%d,%s,%s\n",frame->RRQ.opcode,frame->RRQ.fname,frame->RRQ.mode);

@@ -1,84 +1,10 @@
-/*
- *
- * Value Meaning
- 0 Not defined, see error message (if any).
-int r;
-                fd_set readfds;
-                struct timeval t;
-                t.tv_sec=WAIT_TIME;
-                t.tv_usec=0;
-                FD_ZERO(&readfds);
-                FD_SET(sfd,&readfds);   // to check timout  
-                r=select(sfd+1,&readfds,0,0,&t);
-int r;
-                fd_set readfds;
-                struct timeval t;
-                t.tv_sec=WAIT_TIME;
-                t.tv_usec=0;
-                FD_ZERO(&readfds);
-                FD_SET(sfd,&readfds);   // to check timout  
-                r=select(sfd+1,&readfds,0,0,&t);
-                if(r<0)
-                {
-                        perror("\"Select\" of Ack DaTA");
-                        return;
-                }
-                else if(r==0)
-                {
-                        if(++rt_count<WAIT_COUNT)
-                        {
-                                printf("Timout retransmitted %d\n",rt_count);
-                                //return;
-                                goto retransmit;
-                        }
-                        else
-                        {
-                                printf("disconnected ...");
-                                return;
-                        }
-
-                }
-                if(r<0)
-                {
-                        perror("\"Select\" of Ack DaTA");
-                        return;
-                }
-                else if(r==0)
-                {
-                        if(++rt_count<WAIT_COUNT)
-                        {
-                                printf("Timout retransmitted %d\n",rt_count);
-                                //return;
-                                goto retransmit;
-                        }
-                        else
-                        {
-                                printf("disconnected ...");
-                                return;
-                        }
-
-                }
- 1 File not found.
- 2 Access violation.
- 3 Disk full or allocation exceeded.
- 4 Illegal TFTP operation.
- 5 Unknown transfer ID.
- 6 File already exists.
- 7 No such user
- */
-
-
-
+///TFTP Server Program 
 #include"header.h"
 #include"frames.h"
 #define WAIT_TIME 5
-#define WAIT_COUNT 3
 union FRAME frame;
-
-
-
-
-
+struct sockaddr_in v,v1_recive,v2_recive;
+#include "file_manage.h"
 void main(int argc,char**argv)
 {
 	if(argc<2)
@@ -89,8 +15,6 @@ void main(int argc,char**argv)
 	if(sfd<0)
 		return;
 	////////
-	struct sockaddr_in v,v1_recive,v2_recive;
-#define WAIT_TIME 5
 	int len;
 	v.sin_family=AF_INET;
 	v.sin_port=htons(atoi(argv[1]));
@@ -104,7 +28,7 @@ void main(int argc,char**argv)
 	perror("Bind");
 
 
-	////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
 
 	bzero(&frame,sizeof(frame));
 	recvfrom(sfd,&frame,sizeof(frame),0,(struct sockaddr*)&v,&len);
@@ -112,58 +36,27 @@ void main(int argc,char**argv)
 	printf("\tIP Address %s\n",inet_ntoa((v.sin_addr)));
 	printf("\tPort %d \n",ntohs(v.sin_port));
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	if(frame.RRQ.opcode==1)
 
 	{
 
+
 		RRQ_frame_read(frame);
 		puts("******");
+		send_file(sfd,frame.RRQ.fname);
 		//ERROR_frame_read(frame);
-		char *s;
-		int fd;
-		fd=open(frame.RRQ.fname,0,0664); // to open file requested
-		if(fd<0)
-		{       
-			perror("read");
-			ERROR_frame_make(&frame,3,"File not Found");	
-			sendto(sfd,&frame,sizeof(frame),0,(struct sockaddr*)&v,len); // send Error Frame
-			return;
-		}
-		//      printf("fd=%d\n\n",fd);
-		int i;
-		int flag=0;
-		static int block_no;
-		char buffer[DATA_MAX];
-repeat:	
+	}
+	else if(frame.WRQ.opcode==2)
+	{ //WRQ request is  made by client
+			remove("temp");  //remove the file if already present 
 		bzero(&frame,sizeof(frame));
-		bzero(&buffer,sizeof(buffer));
-		for(i=0;i<DATA_MAX;i++)
-
-		{
-			char ch;
-			if(read(fd,&ch,sizeof(ch))==0)   //come out if EOF
-			{
-				flag=1; // to indicate EOF occureed
-				perror("read");
-				break;
-			}
-			frame.DATA.data[i]=ch;
-		}
-		strcpy(buffer,frame.DATA.data);
-		int rt_count=0;   //retransmitt count 
-retransmit:
-		strcpy(frame.DATA.data,buffer);
+		RRQ_frame_read(frame);
 		frame.DATA.opcode=3;
-		frame.DATA.block=block_no;
-		printf(" %d\n",frame.DATA.block);  
-		//	printf("%s\n%d",frame.DATA.data,strlen(frame.DATA.data));
+		frame.DATA.block=0;
 		sendto(sfd,&frame,sizeof(frame),0,(struct sockaddr*)&v,len); // send 512 bytes
-		bzero(&frame,sizeof(frame));
 
-
-
-		////////select to monitor ack
+		int block_no_buff=1; /// to store previous block number 
 		int r;
 		fd_set readfds;
 		struct timeval t;
@@ -171,6 +64,8 @@ retransmit:
 		t.tv_usec=0;
 		FD_ZERO(&readfds);
 		FD_SET(sfd,&readfds);   // to check timout  
+repeat: 
+		/// to check disconnect stats if not in time 
 		r=select(sfd+1,&readfds,0,0,&t);
 		if(r<0)
 		{
@@ -179,65 +74,59 @@ retransmit:
 		}
 		else if(r==0)
 		{
-			if(++rt_count<WAIT_COUNT)
 			{
-				printf("Timout retransmitted %d\n",rt_count);
-				//return;
-				goto retransmit;
+				printf("disconnected ...");
+				return;
 			}
-			else
+
+		}
+
+		int fd;
+
+
+		bzero(&frame,sizeof(frame));
+		recvfrom(sfd,&frame,sizeof(frame),0,(struct sockaddr*)&v,&len); //recive the frame from server
+		////////////////////////
+		if(frame.DATA.opcode==5 )
+			ERROR_frame_read(frame);  // if error frame show   else data frame
+		else if(frame.DATA.opcode==3 & frame.DATA.block!=0)
+		{
+			if(frame.DATA.block==block_no_buff && block_no_buff!=1)   //repeate for next block if same block is treansmitted twice
+				goto repeat;
+			block_no_buff=frame.DATA.block;
+			printf("%s",frame.DATA.data);
+			int frame_len=strlen(frame.DATA.data);
+			////write data into file
+			fd=open("temp",O_WRONLY|O_CREAT|O_APPEND,0664);   //open file to save the recived data
+			if(fd<0)
+			{               perror("create");
+				return;
+			}
+			if(write(fd,frame.DATA.data,strlen(frame.DATA.data))<0)  //write recived data into file
 			{
-                                printf("disconnected ...");
-                                return;
-                        }
+				perror("write file ");
+				return;
 
-                }
+			}
 
-		////////
-		rt_count=0;
-		recvfrom(sfd,&frame,sizeof(frame),0,(struct sockaddr*)&v1_recive,&len); //ack read
-		if(v1_recive.sin_port!=v.sin_port)
-		{
-			ERROR_frame_make(&frame,2,"ACCESS VIOLATION");
-		
-			sendto(sfd,&frame,sizeof(frame),0,(struct sockaddr*)&v1_recive,len); // send 512 bytes
-			puts("Error");
+			int i;
 
-		}
-		if(frame.ACK.opcode==05)
-			ERROR_frame_read(frame);
-
-		//	if(frame.ACK.block!=block_no)  //recived block is not the same as sent 
-		//			goto retransmit;		
-		if(flag==0)
-		{
-			block_no++;
-			goto repeat;
+			ACK_frame_make(&frame,frame.DATA.block); //ack with blockno
+			usleep(MS);
+			sendto(sfd,&frame,sizeof(frame),0,(struct sockaddr*)&v,len); //send ackno
+			//      if(strlen(frame.DATA.data)==DATA_MAX)   //recive untill data <512
+			if(frame_len==DATA_MAX)   //recive untill data <512
+				goto repeat;
+			close(fd);
 		}
 
-	}
-	else if(frame.RRQ.opcode==2)
-	{
-		RRQ_frame_read(frame);
-			
-	
-	}
-///////////////////////////////////////////////////////////////////////	
 
 
-	/*
-repeat:
-	bzero(&frame,sizeof(frame));
-	recvfrom(sfd,&frame,sizeof(frame),0,(struct sockaddr*)&v,&len);
-//	printf("%d\n",frame.DATA.opcode);
-//	printf("%d\n",frame.DATA.block);
-//	printf("%s",frame.DATA.data);
-//	printf("***************************");
-//	int size=strlen(frame.DATA.data);
-//	printf("SIZE= %d",size);
-//	if(strlen(frame.DATA.data)==DATA_MAX)
-//			goto repeat;
- printf("%d,%d,%s\n",frame.ERROR.opcode,frame.ERROR.error_c,frame.ERROR.error_msg);
-*/
+
+
+
+
+
+	}
 
 }
