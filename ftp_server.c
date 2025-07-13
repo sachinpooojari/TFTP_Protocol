@@ -1,7 +1,7 @@
 ///TFTP Server Program 
 #include"header.h"
 #include"frames.h"
-#define WAIT_TIME 5
+#define WAIT_TIME 5U
 union FRAME frame;
 struct sockaddr_in v,v1_recive,v2_recive;
 #include "file_manage.h"

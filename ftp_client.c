@@ -2,12 +2,13 @@
 #include"header.h"
 #include"frames.h"
 
-#define WAIT_TIME 5
+#define WAIT_TIME 5U
 union FRAME frame;
 struct sockaddr_in v;
-int len,len_r;
+int len;
+int len_r;
 
-#include "file_manage.h"  // contains send file functions 
+#include "file_manage.h" 
 
 
 //function ti recive the file 
