@@ -1,12 +1,17 @@
-#include<stdio.h>
-#include<string.h>
-#include <sys/types.h>          /* See NOTES */
+#ifndef HEADER_H
+#define HEADER_H
+
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h> //inet_addr
-#include <arpa/inet.h> //inet_addr
-#include<unistd.h> 
-#include<stdlib.h>  //atof
- #include <sys/stat.h>  ///for open 
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 #include <fcntl.h>
-#include<sys/select.h>
+#include <sys/select.h>
+
+#endif /* HEADER_H */
 

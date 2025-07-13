@@ -10,17 +10,20 @@
 
 
 
-#define DATA_MAX 12
-#define mode_size 10
-#define fname_size 256
-#define ERROR_MAX 20
-#define WAIT_COUNT 5
-#define MS 1000*200 //delay in ms to watch output for debug
+#ifndef FRAMES_H
+#define FRAMES_H
+
+#define DATA_MAX   (12U)
+#define MODE_SIZE  (10U)
+#define FNAME_SIZE (256U)
+#define ERROR_MAX  (20U)
+#define WAIT_COUNT (5U)
+#define MS         (1000U * 200U) /* delay in ms to watch output for debug */
 struct RW
 {
         short int opcode;  //2byte 
-        char	fname[fname_size]; //fname with 1byte as 0
-        char   mode[mode_size]; // mode with 1byte 0
+        char	fname[FNAME_SIZE]; //fname with 1byte as 0
+        char   mode[MODE_SIZE]; // mode with 1byte 0
 };
 struct DATA
 {
@@ -125,3 +128,4 @@ printf("%d,%d,%s\n",frame.ERROR.opcode,frame.ERROR.error_c,frame.ERROR.error_msg
 }
 
 
+#endif /* FRAMES_H */
